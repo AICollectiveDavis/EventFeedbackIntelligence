@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Collective — Event Feedback</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html{scroll-behavior:smooth}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+  background:#08080f;
+  color:#e8e8f0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:0 1.5rem 6rem;
+  overflow-x:hidden;
+}
+
+/* ── animated background ── */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 90% 60% at 10% 40%, rgba(20,55,200,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 90% 55%, rgba(185,45,0,0.6) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 50% 90%, rgba(120,20,0,0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 40% at 50% 10%, rgba(10,10,40,0.8) 0%, transparent 60%),
+    #08080f;
+  z-index:0;
+  pointer-events:none;
+}
+
+body>*{position:relative;z-index:1}
+
+/* ── header ── */
+header{
+  text-align:center;
+  padding:5rem 0 3rem;
+  animation:fadeDown 0.9s ease both;
+}
+
+@keyframes fadeDown{
+  from{opacity:0;transform:translateY(-18px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+.brand{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.8rem,6vw,4.2rem);
+  font-weight:300;
+  letter-spacing:0.16em;
+  color:#fff;
+  line-height:1;
+  margin-bottom:0.55rem;
+  text-shadow:0 0 80px rgba(100,140,255,0.4),0 0 120px rgba(200,70,0,0.25);
+}
+
+.tagline{
+  font-size:0.7rem;
+  letter-spacing:0.25em;
+  text-transform:uppercase;
+  color:rgba(180,180,220,0.45);
+  font-weight:300;
+}
+
+/* ── upload card ── */
+.upload-card{
+  width:100%;
+  max-width:620px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:1.4rem;
+  animation:fadeUp 1s 0.2s ease both;
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── drop zone ── */
+.drop-zone{
+  width:100%;
+  border:1px solid rgba(120,140,255,0.25);
+  border-radius:18px;
+  padding:3rem 2rem;
+  text-align:center;
+  background:rgba(255,255,255,0.025);
+  cursor:pointer;
+  transition:border-color 0.3s,background 0.3s,transform 0.2s;
+  position:relative;
+  backdrop-filter:blur(8px);
+}
+
+.drop-zone:hover,.drop-zone.over{
+  border-color:rgba(130,160,255,0.6);
+  background:rgba(60,90,255,0.06);
+  transform:translateY(-2px);
+}
+
+.drop-zone svg{
+  width:38px;height:38px;
+  margin-bottom:1rem;
+  opacity:0.45;
+  display:block;
+  margin-left:auto;margin-right:auto;
+}
+
+.drop-zone .dz-main{
+  font-size:0.95rem;
+  color:rgba(200,200,240,0.7);
+  margin-bottom:0.3rem;
+}
+
+.drop-zone .dz-sub{
+  font-size:0.78rem;
+  color:rgba(160,160,200,0.4);
+}
+
+.drop-zone .dz-sub span{
+  color:#8899ff;
+  text-decoration:underline;
+  text-underline-offset:3px;
+  cursor:pointer;
+}
+
+#file-status{
+  margin-top:0.75rem;
+  font-size:0.82rem;
+  min-height:1.1rem;
+  color:#55ddaa;
+  font-weight:500;
+}
+
+/* real input hidden */
+#csv-file{display:none}
+
+/* ── generate button ── */
+.gen-btn{
+  font-family:'Times New Roman',Times,serif;
+  font-size:1.1rem;
+  letter-spacing:0.06em;
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:12px;
+  padding:1rem 3rem;
+  width:100%;
+  max-width:440px;
+  cursor:pointer;
+  background:linear-gradient(135deg,rgba(25,55,195,0.7) 0%,rgba(155,35,0,0.7) 100%);
+  box-shadow:0 0 50px rgba(35,75,210,0.25),0 0 50px rgba(175,45,0,0.2),inset 0 1px 0 rgba(255,255,255,0.12);
+  transition:transform 0.2s,box-shadow 0.25s,opacity 0.2s;
+  position:relative;
+  overflow:hidden;
+}
+
+.gen-btn::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,transparent 60%);
+  pointer-events:none;
+}
+
+.gen-btn:hover:not(:disabled){
+  transform:translateY(-3px);
+  box-shadow:0 0 70px rgba(60,100,255,0.4),0 0 70px rgba(200,55,0,0.3),inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.gen-btn:active:not(:disabled){transform:translateY(-1px)}
+.gen-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* ── spinner ── */
+#loading{
+  display:none;
+  text-align:center;
+  padding:0.5rem;
+}
+
+.spinner{
+  width:30px;height:30px;
+  border:2px solid rgba(120,150,255,0.15);
+  border-top-color:#7788ff;
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+  margin:0 auto 0.7rem;
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#loading p{font-size:0.82rem;color:rgba(180,180,220,0.55);letter-spacing:0.1em}
+
+/* ── error ── */
+#error-box{
+  display:none;
+  background:rgba(160,25,25,0.15);
+  border:1px solid rgba(200,60,60,0.3);
+  border-radius:12px;
+  padding:1rem 1.25rem;
+  color:#ff9999;
+  font-size:0.85rem;
+  line-height:1.7;
+  width:100%;
+  max-width:620px;
+}
+
+/* ── results ── */
+#results{
+  display:none;
+  width:100%;
+  max-width:900px;
+  margin-top:4rem;
+  animation:fadeUp 0.6s ease both;
+}
+
+.sec-label{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.5rem;
+  font-weight:400;
+  letter-spacing:0.08em;
+  color:#fff;
+  margin-bottom:1.3rem;
+  padding-bottom:0.6rem;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+
+/* ── metric grid ── */
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:0.9rem;
+  margin-bottom:3rem;
+}
+
+.metric{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:14px;
+  padding:1.3rem 1rem 1.1rem;
+  text-align:center;
+  backdrop-filter:blur(4px);
+}
+
+.metric-val{
+  font-family:'Cormorant Garamond',serif;
+  font-size:2.2rem;
+  font-weight:400;
+  line-height:1.1;
+  background:linear-gradient(110deg,#aabbff 0%,#ffcc99 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.metric-lbl{
+  font-size:0.66rem;
+  text-transform:uppercase;
+  letter-spacing:0.14em;
+  color:rgba(170,170,210,0.5);
+  margin-top:0.3rem;
+  font-weight:400;
+}
+
+/* ── analysis card ── */
+.a-card{
+  background:rgba(255,255,255,0.025);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;
+  padding:2rem 2rem 1.75rem;
+  margin-bottom:1.5rem;
+  backdrop-filter:blur(4px);
+  line-height:1.8;
+}
+
+.a-card p{color:rgba(210,210,240,0.85);font-size:0.91rem}
+
+.a-card ul{
+  padding-left:1.1rem;
+  margin-top:0.6rem;
+}
+
+.a-card li{
+  color:rgba(200,200,230,0.8);
+  font-size:0.9rem;
+  margin-bottom:0.4rem;
+}
+
+.mini-label{
+  font-size:0.67rem;
+  text-transform:uppercase;
+  letter-spacing:0.15em;
+  color:rgba(140,140,190,0.55);
+  margin:1.25rem 0 0.5rem;
+  font-weight:500;
+}
+
+/* ── recommendation items ── */
+.rec{
+  display:flex;
+  gap:1rem;
+  padding:1.1rem 1.25rem;
+  background:rgba(25,55,185,0.07);
+  border:1px solid rgba(70,100,255,0.14);
+  border-radius:12px;
+  margin-bottom:0.8rem;
+  align-items:flex-start;
+}
+
+.rec-n{
+  flex-shrink:0;
+  width:28px;height:28px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#1e44cc,#991800);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.73rem;font-weight:600;color:#fff;
+  margin-top:1px;
+}
+
+.rec-t{font-size:0.9rem;color:rgba(205,205,235,0.85);line-height:1.7}
+
+/* ── breakdown bars ── */
+.bar-row{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.55rem}
+.bar-key{font-size:0.8rem;color:rgba(190,190,220,0.75);min-width:120px;flex-shrink:0}
+.bar-track{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden}
+.bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#3355cc,#cc4400);transition:width 1s ease}
+.bar-pct{font-size:0.75rem;color:rgba(170,170,210,0.55);min-width:36px;text-align:right}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">AI Collective</div>
+  <div class="tagline">Event Intelligence Platform</div>
+</header>
+
+<div class="upload-card">
+
+  <div class="drop-zone" id="drop-zone">
+    <!-- file icon svg -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="color:#8899ff">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="18" x2="12" y2="12"/>
+      <polyline points="9 15 12 12 15 15"/>
+    </svg>
+    <p class="dz-main">Drop your CSV file here</p>
+    <p class="dz-sub">or <span id="browse-trigger">click to browse</span> your files</p>
+    <div id="file-status"></div>
+  </div>
+
+  <input type="file" id="csv-file" accept=".csv,text/csv"/>
+
+  <button class="gen-btn" id="gen-btn" disabled>
+    Generate Event Feedback Analysis
+  </button>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Analyzing your event data…</p>
+  </div>
+
+  <div id="error-box"></div>
+
+</div><!-- /upload-card -->
+
+<div id="results">
+
+  <div class="sec-label">Overview</div>
+  <div class="metrics" id="metrics"></div>
+
+  <div class="sec-label">Satisfaction Breakdown</div>
+  <div class="a-card" id="sat-breakdown"></div>
+
+  <div class="sec-label">AI Analysis</div>
+  <div class="a-card" id="ai-analysis"></div>
+
+  <div class="sec-label">Recommendations</div>
+  <div id="recs"></div>
+
+</div>
+
+<script>
+// ─── element refs ───────────────────────────────────────────────
+const dropZone     = document.getElementById('drop-zone');
+const browseTrig   = document.getElementById('browse-trigger');
+const csvFile      = document.getElementById('csv-file');
+const fileStatus   = document.getElementById('file-status');
+const genBtn       = document.getElementById('gen-btn');
+const loadingEl    = document.getElementById('loading');
+const errorBox     = document.getElementById('error-box');
+const resultsEl    = document.getElementById('results');
+
+let parsedRows = [];
+let rawCSV     = '';
+
+// ─── file picking ────────────────────────────────────────────────
+// Clicking anywhere on drop zone opens picker
+dropZone.addEventListener('click', () => csvFile.click());
+
+// "click to browse" also works (it's inside the zone, so this is redundant but explicit)
+browseTrig.addEventListener('click', e => { e.stopPropagation(); csvFile.click(); });
+
+csvFile.addEventListener('change', function() {
+  if (this.files && this.files.length > 0) handleFile(this.files[0]);
+});
+
+// ─── drag & drop ─────────────────────────────────────────────────
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', ()=> dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+
+// ─── read file ───────────────────────────────────────────────────
+function handleFile(file) {
+  hideError();
+  fileStatus.textContent = '';
+  genBtn.disabled = true;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    rawCSV = e.target.result;
+    try {
+      parsedRows = parseCSV(rawCSV);
+      if (parsedRows.length === 0) throw new Error('No data rows found.');
+      fileStatus.textContent = '✓  ' + file.name + '  (' + parsedRows.length + ' responses)';
+      genBtn.disabled = false;
+    } catch(err) {
+      showError('Could not parse CSV: ' + err.message);
+    }
+  };
+  reader.onerror = () => showError('File could not be read. Please try again.');
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ─── CSV parser (handles quoted commas & newlines) ────────────────
+function parseCSV(text) {
+  // normalise line endings
+  text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+
+  const rows = [];
+  let cur = '', inQ = false, fields = [];
+
+  for (let i = 0; i <= text.length; i++) {
+    const ch = text[i];
+    if (ch === undefined) { fields.push(cur.trim()); rows.push(fields); break; }
+
+    if (ch === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      fields.push(cur.trim());
+      cur = '';
+    } else if (ch === '\n' && !inQ) {
+      fields.push(cur.trim());
+      rows.push(fields);
+      fields = []; cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+
+  if (rows.length < 2) throw new Error('File appears empty or has only a header row.');
+
+  const headers = rows[0].map(h => h.replace(/^"|"$/g,'').trim());
+  const data = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.every(v => v === '')) continue; // skip blank lines
+    const obj = {};
+    headers.forEach((h, j) => { obj[h] = (r[j] || '').replace(/^"|"$/g,'').trim(); });
+    data.push(obj);
+  }
+  return data;
+}
+
+// ─── compute local stats ─────────────────────────────────────────
+function computeStats(rows) {
+  const keys = Object.keys(rows[0]);
+
+  // satisfaction column — find by keyword
+  const satKey = keys.find(k => /satisfi/i.test(k));
+  // year column
+  const yearKey = keys.find(k => /^year$/i.test(k));
+  // involvement
+  const invKey = keys.find(k => /involvement/i.test(k));
+  // skill level
+  const skillKey = keys.find(k => /skill/i.test(k));
+  // how heard
+  const heardKey = keys.find(k => /hear about/i.test(k));
+  // why came
+  const whyKey = keys.find(k => /why did you come/i.test(k));
+  // enjoyed
+  const enjoyKey = keys.find(k => /enjoy/i.test(k));
+  // improve
+  const improveKey = keys.find(k => /improve/i.test(k));
+  // intimidating
+  const intimidKey = keys.find(k => /intimidat/i.test(k));
+  // crew neck
+  const crewKey = keys.find(k => /crew neck/i.test(k));
+
+  // satisfaction scores
+  const scores = rows.map(r => parseFloat(r[satKey])).filter(n => !isNaN(n));
+  const avgSat  = scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+  const medSat  = scores.length ? median(scores) : null;
+
+  // score distribution buckets
+  const dist = {low:0, mid:0, high:0};
+  scores.forEach(s => { if(s<=5) dist.low++; else if(s<=7) dist.mid++; else dist.high++; });
+
+  // count helper
+  function countField(key) {
+    const tally = {};
+    rows.forEach(r => { const v = r[key]; if(v) tally[v] = (tally[v]||0)+1; });
+    return tally;
+  }
+
+  const yearDist   = yearKey   ? countField(yearKey)   : {};
+  const invDist    = invKey    ? countField(invKey)     : {};
+  const skillDist  = skillKey  ? countField(skillKey)  : {};
+  const heardDist  = heardKey  ? countField(heardKey)  : {};
+
+  // top reason for attending
+  const whyTally = {};
+  if (whyKey) {
+    rows.forEach(r => {
+      (r[whyKey]||'').split(',').forEach(part => {
+        const v = part.trim();
+        if(v) whyTally[v] = (whyTally[v]||0)+1;
+      });
+    });
+  }
+
+  // top enjoyment mentions
+  const enjoyMentions = rows.map(r => (r[enjoyKey]||'').trim()).filter(Boolean);
+  const improveMentions = rows.map(r => (r[improveKey]||'').trim()).filter(Boolean);
+  const intimidMentions = rows.map(r => (r[intimidKey]||'').trim()).filter(Boolean);
+
+  // crew neck
+  let crewYes = 0, crewNo = 0;
+  if (crewKey) rows.forEach(r => { if(/^yes$/i.test(r[crewKey])) crewYes++; else crewNo++; });
+
+  return {
+    total: rows.length, scores, avgSat, medSat, dist,
+    yearDist, invDist, skillDist, heardDist, whyTally,
+    enjoyMentions, improveMentions, intimidMentions,
+    crewYes, crewNo,
+    satKey, yearKey, invKey, skillKey, heardKey, whyKey, enjoyKey, improveKey, intimidKey, crewKey,
+    keys
+  };
+}
+
+function median(arr) {
+  const s = [...arr].sort((a,b)=>a-b);
+  const m = Math.floor(s.length/2);
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2;
+}
+
+function topN(obj, n=3) {
+  return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);
+}
+
+// ─── render local stats ──────────────────────────────────────────
+function renderStats(st) {
+  // metrics row
+  const met = document.getElementById('metrics');
+  const pct = v => Math.round((v/st.scores.length)*100)+'%';
+  met.innerHTML = [
+    {val: st.total,                             lbl: 'Total Responses'},
+    {val: st.avgSat ? st.avgSat.toFixed(1)+'/10':'-', lbl: 'Avg Satisfaction'},
+    {val: st.medSat ? st.medSat.toFixed(1)+'/10':'-', lbl: 'Median Score'},
+    {val: st.scores.length ? pct(st.dist.high) : '-', lbl: 'Rated 8-10'},
+  ].map(m => `<div class="metric"><div class="metric-val">${m.val}</div><div class="metric-lbl">${m.lbl}</div></div>`).join('');
+
+  // satisfaction breakdown
+  const sb = document.getElementById('sat-breakdown');
+  const total = st.scores.length || 1;
+  const buckets = [
+    {lbl:'High (8–10)',  val:st.dist.high},
+    {lbl:'Mid  (6–7)',   val:st.dist.mid},
+    {lbl:'Low  (1–5)',   val:st.dist.low},
+  ];
+  const yearRows = topN(st.yearDist, 5).map(([k,v])=>
+    `<div class="bar-row"><div class="bar-key">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/st.total*100)}%"></div></div><div class="bar-pct">${v}</div></div>`
+  ).join('');
+
+  sb.innerHTML = `
+    <div class="mini-label">Score Distribution</div>
+    ${buckets.map(b=>`
+      <div class="bar-row">
+        <div class="bar-key">${b.lbl}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(b.val/total*100)}%"></div></div>
+        <div class="bar-pct">${Math.round(b.val/total*100)}%</div>
+      </div>`).join('')}
+    ${yearRows ? `<div class="mini-label" style="margin-top:1.4rem">Year of Study</div>${yearRows}` : ''}
+  `;
+}
+
+// ─── generate button ─────────────────────────────────────────────
+genBtn.addEventListener('click', async () => {
+  if (!rawCSV || parsedRows.length === 0) return;
+
+  hideError();
+  resultsEl.style.display = 'none';
+  loadingEl.style.display = 'block';
+  genBtn.disabled = true;
+
+  try {
+    const st = computeStats(parsedRows);
+    renderStats(st);
+
+    // build a rich, specific prompt so Claude can give accurate insights
+    const summaryData = buildPromptData(st);
+
+    const prompt = `You are an expert event analyst for a university AI club called AI Collective (AISC). Below is structured data extracted from a post-event feedback survey. Analyze it thoroughly and return ONLY valid JSON — no markdown fences, no preamble.
+
+EVENT DATA SUMMARY:
+${summaryData}
+
+FULL OPEN-ENDED RESPONSES:
+Enjoyed: ${st.enjoyMentions.join(' | ')}
+Suggestions for improvement: ${st.improveMentions.join(' | ')}
+Intimidating aspects: ${st.intimidMentions.join(' | ')}
+
+Return exactly this JSON structure:
+{
+  "summary": "3-4 sentence paragraph covering overall reception, key themes, and standout patterns from this specific data",
+  "highlights": [
+    "specific highlight 1 referencing actual data points",
+    "specific highlight 2",
+    "specific highlight 3"
+  ],
+  "concerns": [
+    "specific concern 1 grounded in the data",
+    "specific concern 2"
+  ],
+  "recommendations": [
+    "Actionable recommendation 1 directly tied to feedback",
+    "Actionable recommendation 2",
+    "Actionable recommendation 3",
+    "Actionable recommendation 4",
+    "Actionable recommendation 5"
+  ]
+}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const e = await resp.json().catch(()=>({}));
+      throw new Error(e.error?.message || 'API responded with status ' + resp.status + '. Make sure your API key is added to this file (see setup instructions).');
+    }
+
+    const data = await resp.json();
+    const raw  = (data.content || []).map(b => b.text || '').join('');
+    const clean = raw.replace(/```json\s*/g,'').replace(/```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    // render AI section
+    document.getElementById('ai-analysis').innerHTML = `
+      <p>${parsed.summary}</p>
+      <div class="mini-label">What went well</div>
+      <ul>${parsed.highlights.map(h=>`<li>${h}</li>`).join('')}</ul>
+      ${parsed.concerns?.length ? `<div class="mini-label">Areas of concern</div><ul>${parsed.concerns.map(c=>`<li>${c}</li>`).join('')}</ul>` : ''}
+    `;
+
+    document.getElementById('recs').innerHTML = parsed.recommendations.map((r,i)=>
+      `<div class="rec"><div class="rec-n">${i+1}</div><div class="rec-t">${r}</div></div>`
+    ).join('');
+
+    loadingEl.style.display = 'none';
+    resultsEl.style.display = 'block';
+    genBtn.disabled = false;
+
+    resultsEl.scrollIntoView({behavior:'smooth', block:'start'});
+
+  } catch(err) {
+    loadingEl.style.display = 'none';
+    genBtn.disabled = false;
+    showError('Error: ' + (err.message || 'Something went wrong. Check the browser console for details.'));
+  }
+});
+
+// ─── build compact prompt data string ───────────────────────────
+function buildPromptData(st) {
+  const lines = [];
+  lines.push(`Total responses: ${st.total}`);
+  if (st.avgSat !== null) lines.push(`Average satisfaction: ${st.avgSat.toFixed(2)}/10 (median: ${st.medSat?.toFixed(1)})`);
+  lines.push(`Score distribution: ${st.dist.high} scored 8-10 (${pct(st.dist.high,st.scores.length)}%), ${st.dist.mid} scored 6-7 (${pct(st.dist.mid,st.scores.length)}%), ${st.dist.low} scored 1-5 (${pct(st.dist.low,st.scores.length)}%)`);
+
+  if (Object.keys(st.yearDist).length) lines.push('Year distribution: ' + Object.entries(st.yearDist).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k}:${v}`).join(', '));
+  if (Object.keys(st.invDist).length) lines.push('Involvement level: ' + Object.entries(st.invDist).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k}:${v}`).join(', '));
+  if (Object.keys(st.skillDist).length) lines.push('Skill level: ' + Object.entries(st.skillDist).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k}:${v}`).join(', '));
+  if (Object.keys(st.heardDist).length) lines.push('How they heard: ' + topN(st.heardDist,5).map(([k,v])=>`${k}:${v}`).join(', '));
+  if (Object.keys(st.whyTally).length) lines.push('Top reasons for attending: ' + topN(st.whyTally,5).map(([k,v])=>`${k}:${v}`).join(', '));
+  if (st.crewKey) lines.push(`Crew neck interest: ${st.crewYes} Yes, ${st.crewNo} No`);
+
+  return lines.join('\n');
+}
+
+function pct(v, total) { return total ? Math.round(v/total*100) : 0; }
+
+// ─── helpers ─────────────────────────────────────────────────────
+function showError(msg) { errorBox.innerHTML = msg; errorBox.style.display = 'block'; }
+function hideError()    { errorBox.style.display = 'none'; errorBox.innerHTML = ''; }
+</script>
+</body>
+</html>

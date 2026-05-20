@@ -152,7 +152,8 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
 .rec-n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#1e44cc,#991800);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;color:#fff;margin-top:1px}
 .rec-t{font-size:.87rem;color:rgba(205,205,235,.85);line-height:1.65}
 .metric-sub{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--muted)}
-.chart-click-hint{font-size:.55rem;color:rgba(79,127,255,0.45);letter-spacing:.08em;margin-left:.4rem;text-transform:none}
+.chart-click-hint{font-size:.55rem;color:rgba(79,127,255,0.6);letter-spacing:.08em;margin-left:.4rem;text-transform:none;font-family:'JetBrains Mono',monospace}
+.filter-hint{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(200,210,255,0.45);letter-spacing:.1em;margin-top:-.7rem;margin-bottom:.9rem}
 #filter-bar{display:none;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:1rem;padding:.75rem 1rem;background:rgba(79,127,255,0.06);border:1px solid rgba(79,127,255,0.18);border-radius:12px}
 .filter-bar-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-right:.25rem}
 .filter-chip{display:inline-flex;align-items:center;gap:.3rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:.25rem .6rem .25rem .75rem;border-radius:99px;background:rgba(79,127,255,0.15);border:1px solid rgba(79,127,255,0.35);color:#c0d0ff}
@@ -187,6 +188,7 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
   <div class="sec-head"><span class="sec-num">01</span><span class="sec-title">Overview</span><div class="sec-line"></div></div>
   <div class="metrics" id="metrics"></div>
   <div class="sec-head"><span class="sec-num">02</span><span class="sec-title">Who Participates</span><div class="sec-line"></div></div>
+  <p class="filter-hint">Click any slice or legend label to filter all charts</p>
   <div class="chart-grid" id="who-charts"></div>
   <div class="sec-head"><span class="sec-num">03</span><span class="sec-title">Engagement &amp; Satisfaction</span><div class="sec-line"></div></div>
   <div id="sat-section"></div>
@@ -324,11 +326,10 @@ function clearAllFilters(){
 function applyFilters(){
   const filtered=getFilteredRows();
   const filteredSt=computeStats(filtered,detectedCols);
-  // pies always use full dataset — only highlight state changes
   const fullSt=computeStats(allRows,detectedCols);
   renderFilterBar();
   renderMetrics(filteredSt);
-  renderPies(fullSt,detectedCols); // full counts, highlight via activeFilters
+  renderPies(fullSt,filteredSt,detectedCols);
   renderSatisfaction(filteredSt);
 }
 
@@ -355,70 +356,84 @@ function renderFilterBar(){
 // ── PIE COLORS ────────────────────────────────────────────────────
 const PIE_COLORS=['rgba(79,127,255,0.85)','rgba(217,79,43,0.85)','rgba(201,153,58,0.85)','rgba(62,207,142,0.85)','rgba(160,100,255,0.85)','rgba(255,160,60,0.85)','rgba(80,200,220,0.85)','rgba(255,100,130,0.85)'];
 
-function makePie(id,labels,data,colKey,activeVals){
+function makePie(id,labels,data,filtData,colKey,activeVals,fullDist){
   if(chartInstances[id])chartInstances[id].destroy();
   const ctx=document.getElementById(id);if(!ctx)return;
 
   const hasFilter=activeVals&&activeVals.size>0;
+  const hasAnyFilter=Object.keys(activeFilters).length>0;
 
-  // base colors never change — only opacity dims for non-selected
   const bgColors=labels.map((l,i)=>{
     const base=PIE_COLORS[i%PIE_COLORS.length];
-    if(!hasFilter)return base;
-    return activeVals.has(l)?base:base.replace(/[\d.]+\)$/,'0.18)');
+    if(!hasAnyFilter)return base;
+    if(hasFilter)return activeVals.has(l)?base:base.replace(/[\d.]+\)$/,'0.18)');
+    const fi=labels.indexOf(l);
+    return filtData[fi]===0?base.replace(/[\d.]+\)$/,'0.15)'):base;
   });
-  const borderColors=labels.map((l,i)=>{
-    const base=PIE_COLORS[i%PIE_COLORS.length].replace(/[\d.]+\)$/,'1)');
-    if(!hasFilter)return base;
-    return activeVals.has(l)?base:base.replace(/[\d.]+\)$/,'0.25)');
-  });
-  // selected slices get a slightly larger offset
+  const borderColors=bgColors.map(c=>c.replace(/[\d.]+\)$/,'1)'));
+  // selected slices pop out, non-selected on the owner chart shrink via filtData sizing
   const offsets=labels.map(l=>hasFilter&&activeVals.has(l)?8:0);
+  const fullTotal=fullDist?Object.values(fullDist).reduce((a,b)=>a+b,0):data.reduce((a,b)=>a+b,0);
 
   chartInstances[id]=new Chart(ctx.getContext('2d'),{
     type:'doughnut',
     data:{labels,datasets:[{data,backgroundColor:bgColors,borderColor:borderColors,borderWidth:1.5,hoverOffset:6,offset:offsets}]},
     options:{
       responsive:true,maintainAspectRatio:false,cutout:'60%',
+      onHover:function(e,elements){
+        e.native.target.style.cursor=elements.length?'pointer':'default';
+      },
       onClick:(_,elements)=>{
         if(!elements.length)return;
-        const idx=elements[0].index;
-        toggleFilter(colKey,labels[idx]);
+        toggleFilter(colKey,labels[elements[0].index]);
       },
       plugins:{
         legend:{
           position:'right',
+          onClick:function(e,legendItem){
+            toggleFilter(colKey,labels[legendItem.index]);
+          },
+          onHover:function(e){
+            e.native.target.style.cursor='pointer';
+          },
+          onLeave:function(e){
+            e.native.target.style.cursor='default';
+          },
           labels:{
             color:'rgba(210,215,255,0.85)',
             font:{family:"'JetBrains Mono',monospace",size:10},
             boxWidth:10,padding:12,
             generateLabels:function(chart){
-              const ds=chart.data.datasets[0];
-              const total=ds.data.reduce((a,b)=>a+b,0);
               return chart.data.labels.map((label,i)=>{
-                // legend always uses base color, always readable
                 const baseColor=PIE_COLORS[i%PIE_COLORS.length];
-                const isDimmed=hasFilter&&!activeVals.has(label);
+                const fi=labels.indexOf(label);
+                const isDimmed=hasAnyFilter&&((hasFilter&&!activeVals.has(label))||(filtData[fi]===0&&!hasFilter));
+                // when filtered: show % within filtered subset; otherwise full dataset %
+                const filtTotal=filtData.reduce((a,b)=>a+b,0);
+                const displayCount=hasAnyFilter?filtData[fi]:fullDist?fullDist[label]||0:data[i];
+                const displayTotal=hasAnyFilter?(filtTotal||1):fullTotal;
                 return{
-                  text:(label.length>15?label.slice(0,14)+'…':label)+' ('+Math.round(ds.data[i]/total*100)+'%)',
-                  fillStyle:baseColor,
-                  strokeStyle:baseColor,
-                  fontColor:isDimmed?'rgba(160,165,200,0.4)':'rgba(210,215,255,0.85)',
+                  text:(label.length>15?label.slice(0,14)+'…':label)+' ('+Math.round(displayCount/displayTotal*100)+'%)',
+                  fillStyle:baseColor,strokeStyle:baseColor,
+                  fontColor:isDimmed?'rgba(160,165,200,0.35)':'rgba(210,215,255,0.85)',
                   lineWidth:1,hidden:false,index:i
                 };
               });
             }
           }
         },
-        tooltip:{
-          callbacks:{
-            label:ctx=>{
-              const total=ctx.dataset.data.reduce((a,b)=>a+b,0);
-              return ' '+ctx.label+': '+ctx.parsed+' ('+Math.round(ctx.parsed/total*100)+'%)';
-            },
-            title:()=>['Click to filter']
-          }
-        }
+        tooltip:{callbacks:{
+          label:ctx=>{
+            const fi=labels.indexOf(ctx.label);
+            const filtCount=filtData[fi]; // real count, not floored
+            const fullCount=fullDist?fullDist[ctx.label]||0:filtCount;
+            const filtTotal=filtData.reduce((a,b)=>a+b,0);
+            if(hasAnyFilter&&filtCount!==fullCount)
+              return[' Filtered: '+filtCount+' of '+fullCount+' ('+Math.round(filtCount/(filtTotal||1)*100)+'% of filtered)'];
+            return ' '+ctx.label+': '+fullCount+' ('+Math.round(fullCount/fullTotal*100)+'%)';
+          },
+          title:()=>['Click to filter']
+        }}
       },
       animation:{duration:250}
     }
@@ -438,35 +453,43 @@ function renderMetrics(st){
   ].map(m=>'<div class="metric"><div class="metric-val">'+m.val+'</div><div class="metric-lbl">'+m.lbl+'</div></div>').join('');
 }
 
-function renderPies(st,cols){
+function renderPies(fullSt, filteredSt, cols){
   const whoEl=document.getElementById('who-charts');
 
-  // map of colKey -> {title, dist, id}
   const pieDefs=[
-    {key:'year',   title:'Year of Study',     dist:st.yearDist,    id:'pie-year'},
-    {key:'involvement',title:'AISC Involvement',dist:st.involveDist,id:'pie-involve'},
-    {key:'skill',  title:'Technical Skill',   dist:st.skillDist,   id:'pie-skill'},
-    {key:'major',  title:'Major Distribution',dist:st.majorDist,   id:'pie-major'},
-    {key:'heard',  title:'How They Heard',    dist:st.heardDist,   id:'pie-heard'},
+    {key:'year',   title:'Year of Study',     fullDist:fullSt.yearDist,    filtDist:filteredSt.yearDist,    id:'pie-year'},
+    {key:'involvement',title:'AISC Involvement',fullDist:fullSt.involveDist,filtDist:filteredSt.involveDist,id:'pie-involve'},
+    {key:'skill',  title:'Technical Skill',   fullDist:fullSt.skillDist,   filtDist:filteredSt.skillDist,   id:'pie-skill'},
+    {key:'major',  title:'Major Distribution',fullDist:fullSt.majorDist,   filtDist:filteredSt.majorDist,   id:'pie-major'},
+    {key:'heard',  title:'How They Heard',    fullDist:fullSt.heardDist,   filtDist:filteredSt.heardDist,   id:'pie-heard'},
   ];
 
-  // on first render build cards, on subsequent just update charts
-  const isFirstRender=!document.getElementById('pie-year');
-  if(isFirstRender){
-    whoEl.innerHTML='';
-    pieDefs.forEach(({key,title,dist,id})=>{
-      const entries=topN(dist,8);if(!entries.length)return;
-      const card=document.createElement('div');card.className='chart-card';card.dataset.pieId=id;
-      card.innerHTML='<div class="chart-label">'+title+' <span class="chart-click-hint">click to filter</span></div><div class="chart-wrap"><canvas id="'+id+'"></canvas></div>';
-      whoEl.appendChild(card);
-    });
-    if(!whoEl.children.length)whoEl.innerHTML='<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">No demographic columns detected.</p>';
+  // rebuild cards every time so canvas elements are always fresh
+  whoEl.innerHTML='';
+  let anyRendered=false;
+  pieDefs.forEach(({key,title,fullDist,id})=>{
+    const entries=topN(fullDist,8);if(!entries.length)return;
+    anyRendered=true;
+    const card=document.createElement('div');card.className='chart-card';
+    card.innerHTML='<div class="chart-label">'+title+'</div><div class="chart-wrap"><canvas id="'+id+'"></canvas></div>';
+    whoEl.appendChild(card);
+  });
+  if(!anyRendered){
+    whoEl.innerHTML='<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">No demographic columns detected.</p>';
+    return;
   }
 
-  pieDefs.forEach(({key,dist,id})=>{
-    const entries=topN(dist,8);if(!entries.length)return;
+  const hasAnyFilter=Object.keys(activeFilters).length>0;
+
+  pieDefs.forEach(({key,fullDist,filtDist,id})=>{
+    const fullEntries=topN(fullDist,8);if(!fullEntries.length)return;
     const activeVals=activeFilters[key]||null;
-    setTimeout(()=>makePie(id,entries.map(e=>e[0]),entries.map(e=>e[1]),key,activeVals),isFirstRender?80:0);
+    const labels=fullEntries.map(e=>e[0]);
+    // filtered counts — what the pie sizes reflect when filtered
+    const filtData=labels.map(label=>hasAnyFilter?(filtDist[label]||0):fullDist[label]);
+    // pie sizes = filtered counts, but floor at 0.3 so 0-count slices stay as a tiny clickable sliver
+    const data=filtData.map(v=>v===0?0.3:v);
+    setTimeout(()=>makePie(id,labels,data,filtData,key,activeVals,fullDist),50);
   });
 }
 
@@ -488,7 +511,7 @@ function renderStats(st){
   detectedCols=st.cols;
   allRows=parsedRows.length?parsedRows:allRows;
   renderMetrics(st);
-  renderPies(st,st.cols);
+  renderPies(st,st,st.cols);
   renderSatisfaction(st);
   const bar=document.getElementById('filter-bar');
   if(bar){bar.innerHTML='';bar.style.display='none';}

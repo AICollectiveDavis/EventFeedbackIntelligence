@@ -56,7 +56,7 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
 .info-icon:hover{border-color:rgba(79,127,255,0.8);color:#a0baff;background:rgba(79,127,255,0.14)}
 .info-tooltip{
   position:absolute;
-  bottom:calc(100% + 10px);
+  top:calc(100% + 10px);
   left:50%;transform:translateX(-50%);
   width:280px;
   background:rgba(12,12,28,0.96);
@@ -67,21 +67,21 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
   box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04);
   opacity:0;pointer-events:none;
   transition:opacity .18s,transform .18s;
-  transform:translateX(-50%) translateY(4px);
+  transform:translateX(-50%) translateY(-4px);
   z-index:100;
 }
 .info-wrap:hover .info-tooltip{
   opacity:1;pointer-events:auto;
   transform:translateX(-50%) translateY(0);
 }
-/* arrow */
+/* arrow pointing up */
 .info-tooltip::after{
-  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
-  border:6px solid transparent;border-top-color:rgba(79,127,255,0.2);
+  content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-bottom-color:rgba(79,127,255,0.2);
 }
 .info-tooltip::before{
-  content:'';position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);
-  border:5px solid transparent;border-top-color:rgba(12,12,28,0.96);
+  content:'';position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-bottom-color:rgba(12,12,28,0.96);
   z-index:1;
 }
 .tt-title{
@@ -171,12 +171,15 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
   <div class="drop-zone" id="drop-zone">
     <div class="dz-icon">📋</div>
     <p class="dz-main">Drop your CSV file here</p>
-    <p class="dz-sub">or <span id="browse-trigger">click to browse</span> your files &nbsp;<span class="info-wrap"><span class="info-icon">i</span><div class="info-tooltip"><div class="tt-title">Expected CSV columns</div><div class="tt-section">Required</div><div class="tt-row">Timestamp</div><div class="tt-row">Full Name</div><div class="tt-row">Email Address</div><div class="tt-row">Year</div><div class="tt-row">How satisfied are you with the event?</div><div class="tt-row">What did you enjoy?</div><div class="tt-row">What do you think could be improved?</div><div class="tt-section">Optional — enables more charts</div><div class="tt-row opt">Major(s)</div><div class="tt-row opt">What best describes your current involvement with AISC?</div><div class="tt-row opt">Which of these best describes your technical skill-level?</div><div class="tt-row opt">How did you hear about this event?</div></div></span></span></p>
+    <p class="dz-sub">or <span id="browse-trigger">click to browse</span> your files</p>
     <div id="file-status"></div>
   </div>
   <input type="file" id="csv-file" accept=".csv,text/csv"/>
   <button class="gen-btn" id="gen-btn" disabled>Generate Analysis</button>
+  <div style="display:flex;align-items:center;gap:.5rem">
   <button class="demo-btn" id="demo-btn">⚡ Preview with Demo Data</button>
+  <span class="info-wrap"><span class="info-icon">i</span><div class="info-tooltip"><div class="tt-title">Expected CSV columns</div><div class="tt-section">Required</div><div class="tt-row">Timestamp</div><div class="tt-row">Full Name</div><div class="tt-row">Email Address</div><div class="tt-row">Year</div><div class="tt-row">How satisfied are you with the event?</div><div class="tt-row">What did you enjoy?</div><div class="tt-row">What do you think could be improved?</div><div class="tt-section">Optional — enables more charts</div><div class="tt-row opt">Major(s)</div><div class="tt-row opt">What best describes your current involvement with AISC?</div><div class="tt-row opt">Which of these best describes your technical skill-level?</div><div class="tt-row opt">How did you hear about this event?</div></div></span>
+  </div>
   <div id="loading"><div class="spinner"></div><p>Analyzing event data…</p></div>
   <div id="error-box"></div>
 </div>

@@ -40,6 +40,68 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
 .dz-sub span{color:var(--blue);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 #file-status{margin-top:.65rem;font-size:.78rem;min-height:1rem;color:var(--green);font-family:'JetBrains Mono',monospace}
 #csv-file{display:none}
+
+/* ── INFO TOOLTIP ── */
+.info-wrap{position:relative;display:inline-flex;align-items:center}
+.info-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:50%;
+  border:1px solid rgba(79,127,255,0.4);
+  color:rgba(79,127,255,0.7);
+  font-size:.65rem;font-family:'JetBrains Mono',monospace;font-weight:600;
+  cursor:default;user-select:none;
+  transition:border-color .2s,color .2s,background .2s;
+  background:rgba(79,127,255,0.06);
+}
+.info-icon:hover{border-color:rgba(79,127,255,0.8);color:#a0baff;background:rgba(79,127,255,0.14)}
+.info-tooltip{
+  position:absolute;
+  bottom:calc(100% + 10px);
+  left:50%;transform:translateX(-50%);
+  width:280px;
+  background:rgba(12,12,28,0.96);
+  border:1px solid rgba(79,127,255,0.2);
+  border-radius:14px;
+  padding:1rem 1.1rem;
+  backdrop-filter:blur(20px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.04);
+  opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s;
+  transform:translateX(-50%) translateY(4px);
+  z-index:100;
+}
+.info-wrap:hover .info-tooltip{
+  opacity:1;pointer-events:auto;
+  transform:translateX(-50%) translateY(0);
+}
+/* arrow */
+.info-tooltip::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:rgba(79,127,255,0.2);
+}
+.info-tooltip::before{
+  content:'';position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(12,12,28,0.96);
+  z-index:1;
+}
+.tt-title{
+  font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  text-transform:uppercase;letter-spacing:.14em;
+  color:rgba(79,127,255,0.8);margin-bottom:.7rem;
+}
+.tt-section{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  text-transform:uppercase;letter-spacing:.12em;
+  color:var(--muted);margin:.65rem 0 .3rem;
+}
+.tt-row{
+  display:flex;align-items:baseline;gap:.4rem;
+  font-size:.76rem;color:rgba(210,215,255,0.8);
+  margin-bottom:.22rem;line-height:1.4;
+}
+.tt-row::before{content:'·';color:rgba(79,127,255,0.5);flex-shrink:0}
+.tt-row.opt{color:rgba(180,185,220,0.55)}
+.tt-row.opt::before{color:rgba(180,185,220,0.25)}
 .gen-btn{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;border:none;border-radius:12px;padding:.95rem 2.5rem;width:100%;max-width:400px;cursor:pointer;background:linear-gradient(135deg,#1e3eb5 0%,#a03018 100%);box-shadow:0 0 40px rgba(50,90,220,0.18),0 0 40px rgba(160,48,24,0.14);transition:transform .2s,box-shadow .2s,opacity .2s}
 .gen-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 0 60px rgba(79,127,255,0.3),0 0 60px rgba(200,60,30,0.22)}
 .gen-btn:disabled{opacity:.22;cursor:not-allowed}
@@ -109,7 +171,7 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
   <div class="drop-zone" id="drop-zone">
     <div class="dz-icon">📋</div>
     <p class="dz-main">Drop your CSV file here</p>
-    <p class="dz-sub">or <span id="browse-trigger">click to browse</span> your files</p>
+    <p class="dz-sub">or <span id="browse-trigger">click to browse</span> your files &nbsp;<span class="info-wrap"><span class="info-icon">i</span><div class="info-tooltip"><div class="tt-title">Expected CSV columns</div><div class="tt-section">Required</div><div class="tt-row">Timestamp</div><div class="tt-row">Full Name</div><div class="tt-row">Email Address</div><div class="tt-row">Year</div><div class="tt-row">How satisfied are you with the event?</div><div class="tt-row">What did you enjoy?</div><div class="tt-row">What do you think could be improved?</div><div class="tt-section">Optional — enables more charts</div><div class="tt-row opt">Major(s)</div><div class="tt-row opt">What best describes your current involvement with AISC?</div><div class="tt-row opt">Which of these best describes your technical skill-level?</div><div class="tt-row opt">How did you hear about this event?</div></div></span></span></p>
     <div id="file-status"></div>
   </div>
   <input type="file" id="csv-file" accept=".csv,text/csv"/>

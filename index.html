@@ -43,6 +43,8 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
 .gen-btn{font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;border:none;border-radius:12px;padding:.95rem 2.5rem;width:100%;max-width:400px;cursor:pointer;background:linear-gradient(135deg,#1e3eb5 0%,#a03018 100%);box-shadow:0 0 40px rgba(50,90,220,0.18),0 0 40px rgba(160,48,24,0.14);transition:transform .2s,box-shadow .2s,opacity .2s}
 .gen-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 0 60px rgba(79,127,255,0.3),0 0 60px rgba(200,60,30,0.22)}
 .gen-btn:disabled{opacity:.22;cursor:not-allowed}
+.demo-btn{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.08em;color:var(--muted);background:none;border:1px solid var(--border);border-radius:8px;padding:.5rem 1.2rem;cursor:pointer;transition:color .2s,border-color .2s}
+.demo-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.2)}
 #loading{display:none;text-align:center;padding:.5rem}
 .spinner{width:26px;height:26px;border:2px solid rgba(79,127,255,0.15);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto .65rem}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -87,6 +89,15 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
 .rec:hover{border-color:rgba(70,100,255,0.25);background:rgba(25,55,185,0.12)}
 .rec-n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#1e44cc,#991800);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;color:#fff;margin-top:1px}
 .rec-t{font-size:.87rem;color:rgba(205,205,235,.85);line-height:1.65}
+.metric-sub{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--muted)}
+.chart-click-hint{font-size:.55rem;color:rgba(79,127,255,0.45);letter-spacing:.08em;margin-left:.4rem;text-transform:none}
+#filter-bar{display:none;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:1rem;padding:.75rem 1rem;background:rgba(79,127,255,0.06);border:1px solid rgba(79,127,255,0.18);border-radius:12px}
+.filter-bar-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-right:.25rem}
+.filter-chip{display:inline-flex;align-items:center;gap:.3rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:.25rem .6rem .25rem .75rem;border-radius:99px;background:rgba(79,127,255,0.15);border:1px solid rgba(79,127,255,0.35);color:#c0d0ff}
+.filter-chip button{background:none;border:none;color:rgba(160,180,255,0.6);cursor:pointer;font-size:.85rem;line-height:1;padding:0;transition:color .15s}
+.filter-chip button:hover{color:#fff}
+.filter-clear-all{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(217,79,43,0.7);background:none;border:1px solid rgba(217,79,43,0.25);border-radius:6px;padding:.2rem .55rem;cursor:pointer;transition:color .15s,border-color .15s;margin-left:.25rem}
+.filter-clear-all:hover{color:#ff7755;border-color:rgba(217,79,43,0.5)}
 </style>
 </head>
 <body>
@@ -103,6 +114,7 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
   </div>
   <input type="file" id="csv-file" accept=".csv,text/csv"/>
   <button class="gen-btn" id="gen-btn" disabled>Generate Analysis</button>
+  <button class="demo-btn" id="demo-btn">⚡ Preview with Demo Data</button>
   <div id="loading"><div class="spinner"></div><p>Analyzing event data…</p></div>
   <div id="error-box"></div>
 </div>
@@ -117,33 +129,49 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
   <div class="qual-card" id="qual-section"><p style="color:var(--muted);font-size:.85rem">AI analysis will appear here after generation.</p></div>
 </div>
 <script>
-const dropZone=document.getElementById('drop-zone'),browseTrig=document.getElementById('browse-trigger'),csvFile=document.getElementById('csv-file'),fileStatus=document.getElementById('file-status'),genBtn=document.getElementById('gen-btn'),loadingEl=document.getElementById('loading'),errorBox=document.getElementById('error-box'),resultsEl=document.getElementById('results');
-let parsedRows=[],rawCSV='';
+// ── REFS ─────────────────────────────────────────────────────────
+const dropZone=document.getElementById('drop-zone'),browseTrig=document.getElementById('browse-trigger'),
+  csvFile=document.getElementById('csv-file'),fileStatus=document.getElementById('file-status'),
+  genBtn=document.getElementById('gen-btn'),loadingEl=document.getElementById('loading'),
+  errorBox=document.getElementById('error-box'),resultsEl=document.getElementById('results');
+
+let parsedRows=[],rawCSV='',allRows=[],detectedCols={};
 const chartInstances={};
+
+// activeFilters: { colKey -> Set of values }
+let activeFilters={};
+
+// ── FILE HANDLING ─────────────────────────────────────────────────
 dropZone.addEventListener('click',()=>csvFile.click());
 browseTrig.addEventListener('click',e=>{e.stopPropagation();csvFile.click();});
 csvFile.addEventListener('change',function(){if(this.files[0])handleFile(this.files[0]);});
 dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('over');});
 dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('over'));
 dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+
 function handleFile(file){
   hideError();fileStatus.textContent='';genBtn.disabled=true;
   const reader=new FileReader();
   reader.onload=e=>{
     rawCSV=e.target.result;
-    try{parsedRows=parseCSV(rawCSV);if(parsedRows.length===0)throw new Error('No data rows found.');
-      fileStatus.textContent='✓  '+file.name+'  ('+parsedRows.length+' responses)';genBtn.disabled=false;
+    try{
+      parsedRows=parseCSV(rawCSV);
+      if(parsedRows.length===0)throw new Error('No data rows found.');
+      allRows=parsedRows;
+      fileStatus.textContent='✓  '+file.name+'  ('+parsedRows.length+' responses)';
+      genBtn.disabled=false;
     }catch(err){showError('Could not parse CSV: '+err.message);}
   };
   reader.onerror=()=>showError('File could not be read.');
   reader.readAsText(file,'UTF-8');
 }
+
+// ── CSV PARSER ────────────────────────────────────────────────────
 function parseCSV(text){
   text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  const rows=[];let cur='',inQ=false,fields=[];
-  // detect delimiter: tab or comma
   const firstLine=text.split('\n')[0];
   const delim=firstLine.split('\t').length>firstLine.split(',').length?'\t':',';
+  const rows=[];let cur='',inQ=false,fields=[];
   for(let i=0;i<=text.length;i++){
     const ch=text[i];
     if(ch===undefined){fields.push(cur.trim());rows.push(fields);break;}
@@ -162,6 +190,8 @@ function parseCSV(text){
   }
   return data;
 }
+
+// ── COLUMN DETECTION ─────────────────────────────────────────────
 function detectCols(rows){
   const keys=Object.keys(rows[0]);
   const find=re=>keys.find(k=>re.test(k))||null;
@@ -176,8 +206,9 @@ function detectCols(rows){
     heard:find(/hear about|heard about/i),
   };
 }
-function computeStats(rows){
-  const cols=detectCols(rows);
+
+// ── STATS ─────────────────────────────────────────────────────────
+function computeStats(rows,cols){
   function countField(key){if(!key)return{};const t={};rows.forEach(r=>{const v=r[key];if(v)t[v]=(t[v]||0)+1;});return t;}
   const scores=cols.satisfaction?rows.map(r=>parseFloat(r[cols.satisfaction])).filter(n=>!isNaN(n)):[];
   const avgSat=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null;
@@ -192,89 +223,288 @@ function computeStats(rows){
     improveMentions:cols.improve?rows.map(r=>(r[cols.improve]||'').trim()).filter(Boolean):[],
   };
 }
+
 function median(arr){const s=[...arr].sort((a,b)=>a-b),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 function topN(obj,n=8){return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,n);}
 function pct(v,total){return total?Math.round(v/total*100):0;}
-const PIE_COLORS=['rgba(79,127,255,0.8)','rgba(217,79,43,0.8)','rgba(201,153,58,0.8)','rgba(62,207,142,0.8)','rgba(160,100,255,0.8)','rgba(255,160,60,0.8)','rgba(80,200,220,0.8)','rgba(255,100,130,0.8)'];
-function makePie(id,labels,data){
+
+// ── FILTER HELPERS ────────────────────────────────────────────────
+function getFilteredRows(){
+  if(!Object.keys(activeFilters).length)return allRows;
+  return allRows.filter(row=>{
+    return Object.entries(activeFilters).every(([colKey,vals])=>{
+      const colName=detectedCols[colKey];
+      if(!colName)return true;
+      return vals.has(row[colName]);
+    });
+  });
+}
+
+function toggleFilter(colKey,value){
+  if(!activeFilters[colKey])activeFilters[colKey]=new Set();
+  if(activeFilters[colKey].has(value)){
+    activeFilters[colKey].delete(value);
+    if(activeFilters[colKey].size===0)delete activeFilters[colKey];
+  } else {
+    activeFilters[colKey].add(value);
+  }
+  applyFilters();
+}
+
+function clearAllFilters(){
+  activeFilters={};
+  applyFilters();
+}
+
+function applyFilters(){
+  const filtered=getFilteredRows();
+  const st=computeStats(filtered,detectedCols);
+  renderFilterBar();
+  renderMetrics(st);
+  renderPies(st,detectedCols);
+  renderSatisfaction(st);
+}
+
+// ── FILTER BAR ────────────────────────────────────────────────────
+function renderFilterBar(){
+  let bar=document.getElementById('filter-bar');
+  const hasFilters=Object.keys(activeFilters).length>0;
+  if(!bar){
+    bar=document.createElement('div');bar.id='filter-bar';
+    const whoEl=document.getElementById('who-charts');
+    whoEl.parentNode.insertBefore(bar,whoEl);
+  }
+  if(!hasFilters){bar.innerHTML='';bar.style.display='none';return;}
+  bar.style.display='flex';
+  const chips=[];
+  Object.entries(activeFilters).forEach(([colKey,vals])=>{
+    vals.forEach(val=>{
+      chips.push('<span class="filter-chip">'+val+' <button onclick="toggleFilter(\''+colKey+'\',\''+val.replace(/'/g,"\\'")+'\')" aria-label="remove">×</button></span>');
+    });
+  });
+  bar.innerHTML='<span class="filter-bar-label">Filtered by:</span>'+chips.join('')+'<button class="filter-clear-all" onclick="clearAllFilters()">Clear all</button>';
+}
+
+// ── PIE COLORS ────────────────────────────────────────────────────
+const PIE_COLORS=['rgba(79,127,255,0.85)','rgba(217,79,43,0.85)','rgba(201,153,58,0.85)','rgba(62,207,142,0.85)','rgba(160,100,255,0.85)','rgba(255,160,60,0.85)','rgba(80,200,220,0.85)','rgba(255,100,130,0.85)'];
+
+function makePie(id,labels,data,colKey,activeVals){
   if(chartInstances[id])chartInstances[id].destroy();
   const ctx=document.getElementById(id);if(!ctx)return;
+
+  // dim unselected slices if filter active
+  const bgColors=labels.map((l,i)=>{
+    if(!activeVals||activeVals.size===0)return PIE_COLORS[i%PIE_COLORS.length];
+    return activeVals.has(l)?PIE_COLORS[i%PIE_COLORS.length]:PIE_COLORS[i%PIE_COLORS.length].replace('0.85','0.2');
+  });
+
   chartInstances[id]=new Chart(ctx.getContext('2d'),{
     type:'doughnut',
-    data:{labels,datasets:[{data,backgroundColor:PIE_COLORS,borderColor:PIE_COLORS.map(c=>c.replace('0.8','1')),borderWidth:1.5,hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+    data:{labels,datasets:[{data,backgroundColor:bgColors,borderColor:bgColors.map(c=>c.replace(/[\d.]+\)$/,'1)')),borderWidth:1.5,hoverOffset:6}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'60%',
+      onClick:(_,elements)=>{
+        if(!elements.length)return;
+        const idx=elements[0].index;
+        toggleFilter(colKey,labels[idx]);
+      },
       plugins:{
-        legend:{position:'right',labels:{color:'rgba(180,180,210,0.75)',font:{family:"'JetBrains Mono',monospace",size:10},boxWidth:10,padding:10,
-          generateLabels:function(chart){const ds=chart.data.datasets[0];const total=ds.data.reduce((a,b)=>a+b,0);
-            return chart.data.labels.map((label,i)=>({text:(label.length>16?label.slice(0,15)+'…':label)+' ('+Math.round(ds.data[i]/total*100)+'%)',fillStyle:ds.backgroundColor[i],strokeStyle:ds.backgroundColor[i],lineWidth:1,hidden:false,index:i}));}}},
-        tooltip:{callbacks:{label:ctx=>{const total=ctx.dataset.data.reduce((a,b)=>a+b,0);return ' '+ctx.label+': '+ctx.parsed+' ('+Math.round(ctx.parsed/total*100)+'%)';}}}
-      }
+        legend:{
+          position:'right',
+          labels:{
+            color:'rgba(210,215,255,0.85)',
+            font:{family:"'JetBrains Mono',monospace",size:10},
+            boxWidth:10,padding:12,
+            generateLabels:function(chart){
+              const ds=chart.data.datasets[0];
+              const total=ds.data.reduce((a,b)=>a+b,0);
+              return chart.data.labels.map((label,i)=>{
+                const isActive=!activeVals||activeVals.size===0||activeVals.has(label);
+                return{
+                  text:(label.length>15?label.slice(0,14)+'…':label)+' ('+Math.round(ds.data[i]/total*100)+'%)',
+                  fillStyle:ds.backgroundColor[i],
+                  strokeStyle:ds.backgroundColor[i],
+                  fontColor:isActive?'rgba(210,215,255,0.85)':'rgba(140,145,180,0.45)',
+                  lineWidth:1,hidden:false,index:i
+                };
+              });
+            }
+          }
+        },
+        tooltip:{
+          callbacks:{
+            label:ctx=>{
+              const total=ctx.dataset.data.reduce((a,b)=>a+b,0);
+              return ' '+ctx.label+': '+ctx.parsed+' ('+Math.round(ctx.parsed/total*100)+'%)';
+            },
+            title:()=>['Click to filter']
+          }
+        }
+      },
+      animation:{duration:300}
     }
   });
 }
-function renderStats(st){
+
+// ── RENDER PIECES ─────────────────────────────────────────────────
+function renderMetrics(st){
+  const isFiltered=Object.keys(activeFilters).length>0;
+  const totalLabel=isFiltered?st.total+' <span class="metric-sub">of '+allRows.length+'</span>':st.total;
   const highPct=st.scores.length?pct(st.dist.high,st.scores.length)+'%':'—';
   document.getElementById('metrics').innerHTML=[
-    {val:st.total,lbl:'Total Responses'},
+    {val:totalLabel,lbl:'Responses'},
     {val:st.avgSat?st.avgSat.toFixed(1)+'/10':'—',lbl:'Avg Satisfaction'},
     {val:st.medSat?st.medSat.toFixed(1)+'/10':'—',lbl:'Median Score'},
     {val:highPct,lbl:'Rated 8–10'},
   ].map(m=>'<div class="metric"><div class="metric-val">'+m.val+'</div><div class="metric-lbl">'+m.lbl+'</div></div>').join('');
+}
 
-  const whoEl=document.getElementById('who-charts');whoEl.innerHTML='';
-  function addPie(title,distObj,id){
-    const entries=topN(distObj,8);if(!entries.length)return;
-    const card=document.createElement('div');card.className='chart-card';
-    card.innerHTML='<div class="chart-label">'+title+'</div><div class="chart-wrap"><canvas id="'+id+'"></canvas></div>';
-    whoEl.appendChild(card);setTimeout(()=>makePie(id,entries.map(e=>e[0]),entries.map(e=>e[1])),80);
+function renderPies(st,cols){
+  const whoEl=document.getElementById('who-charts');
+
+  // map of colKey -> {title, dist, id}
+  const pieDefs=[
+    {key:'year',   title:'Year of Study',     dist:st.yearDist,    id:'pie-year'},
+    {key:'involvement',title:'AISC Involvement',dist:st.involveDist,id:'pie-involve'},
+    {key:'skill',  title:'Technical Skill',   dist:st.skillDist,   id:'pie-skill'},
+    {key:'major',  title:'Major Distribution',dist:st.majorDist,   id:'pie-major'},
+    {key:'heard',  title:'How They Heard',    dist:st.heardDist,   id:'pie-heard'},
+  ];
+
+  // on first render build cards, on subsequent just update charts
+  const isFirstRender=!document.getElementById('pie-year');
+  if(isFirstRender){
+    whoEl.innerHTML='';
+    pieDefs.forEach(({key,title,dist,id})=>{
+      const entries=topN(dist,8);if(!entries.length)return;
+      const card=document.createElement('div');card.className='chart-card';card.dataset.pieId=id;
+      card.innerHTML='<div class="chart-label">'+title+' <span class="chart-click-hint">click to filter</span></div><div class="chart-wrap"><canvas id="'+id+'"></canvas></div>';
+      whoEl.appendChild(card);
+    });
+    if(!whoEl.children.length)whoEl.innerHTML='<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">No demographic columns detected.</p>';
   }
-  addPie('Year of Study',st.yearDist,'pie-year');
-  addPie('AISC Involvement',st.involveDist,'pie-involve');
-  addPie('Technical Skill',st.skillDist,'pie-skill');
-  addPie('Major Distribution',st.majorDist,'pie-major');
-  addPie('How They Heard',st.heardDist,'pie-heard');
-  if(!whoEl.children.length)whoEl.innerHTML='<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">No demographic columns detected in this CSV.</p>';
 
+  pieDefs.forEach(({key,dist,id})=>{
+    const entries=topN(dist,8);if(!entries.length)return;
+    const activeVals=activeFilters[key]||null;
+    setTimeout(()=>makePie(id,entries.map(e=>e[0]),entries.map(e=>e[1]),key,activeVals),isFirstRender?80:0);
+  });
+}
+
+function renderSatisfaction(st){
   const satEl=document.getElementById('sat-section');
   if(st.scores.length){
     const total=st.scores.length;
-    satEl.innerHTML='<div class="sat-card"><div class="sat-top"><div class="sat-score">'+st.avgSat.toFixed(1)+'</div><div class="sat-denom">/ 10 avg</div><div class="sat-desc">Based on '+total+' response'+(total!==1?'s':'')+' · median '+st.medSat.toFixed(1)+'</div></div>'+
+    satEl.innerHTML='<div class="sat-card"><div class="sat-top"><div class="sat-score">'+st.avgSat.toFixed(1)+'</div><div class="sat-denom">/ 10 avg</div><div class="sat-desc">'+total+' response'+(total!==1?'s':'')+' · median '+st.medSat.toFixed(1)+'</div></div>'+
       [{lbl:'High (8–10)',val:st.dist.high},{lbl:'Mid  (6–7)',val:st.dist.mid},{lbl:'Low  (1–5)',val:st.dist.low}].map(b=>
         '<div class="bar-row"><div class="bar-key">'+b.lbl+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct(b.val,total)+'%"></div></div><div class="bar-val">'+pct(b.val,total)+'%</div></div>'
       ).join('')+'</div>';
   } else {
-    satEl.innerHTML='<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">No satisfaction score column detected in this CSV.</p>';
+    satEl.innerHTML='<p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">No satisfaction score column detected.</p>';
   }
 }
+
+function renderStats(st){
+  activeFilters={};
+  detectedCols=st.cols;
+  allRows=parsedRows.length?parsedRows:allRows;
+  renderMetrics(st);
+  renderPies(st,st.cols);
+  renderSatisfaction(st);
+  const bar=document.getElementById('filter-bar');
+  if(bar){bar.innerHTML='';bar.style.display='none';}
+}
+
+// ── GENERATE ─────────────────────────────────────────────────────
 genBtn.addEventListener('click',async()=>{
   if(!rawCSV||parsedRows.length===0)return;
   hideError();resultsEl.style.display='none';loadingEl.style.display='block';genBtn.disabled=true;
   try{
-    const st=computeStats(parsedRows);renderStats(st);
+    const cols=detectCols(parsedRows);
+    detectedCols=cols;
+    allRows=parsedRows;
+    activeFilters={};
+    const st=computeStats(parsedRows,cols);
+    renderStats(st);
+
     const statsLines=['Total responses: '+st.total];
     if(st.avgSat!==null)statsLines.push('Avg satisfaction: '+st.avgSat.toFixed(2)+'/10 (median '+st.medSat.toFixed(1)+')');
     if(Object.keys(st.yearDist).length)statsLines.push('Year: '+Object.entries(st.yearDist).map(([k,v])=>k+':'+v).join(', '));
     if(Object.keys(st.involveDist).length)statsLines.push('Involvement: '+Object.entries(st.involveDist).map(([k,v])=>k+':'+v).join(', '));
     if(Object.keys(st.skillDist).length)statsLines.push('Skill level: '+Object.entries(st.skillDist).map(([k,v])=>k+':'+v).join(', '));
     if(Object.keys(st.heardDist).length)statsLines.push('How heard: '+topN(st.heardDist,5).map(([k,v])=>k+':'+v).join(', '));
-    const prompt='You are an event analyst for AI Collective (AISC), a university AI club. Analyze this post-event feedback and return ONLY valid JSON — no markdown, no preamble.\n\nQUANTITATIVE SUMMARY:\n'+statsLines.join('\n')+'\n\nOPEN-ENDED RESPONSES:\nWhat people enjoyed: '+st.enjoyMentions.join(' | ')+'\nWhat could be improved: '+st.improveMentions.join(' | ')+'\n\nReturn EXACTLY this JSON:\n{\n  "enjoyed_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"}\n  ],\n  "improve_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"}\n  ],\n  "recommendations": [\n    "Specific actionable rec 1 tied directly to feedback",\n    "Specific actionable rec 2",\n    "Specific actionable rec 3",\n    "Specific actionable rec 4",\n    "Specific actionable rec 5"\n  ]\n}\nLabels max 4 words. Count = frequency in responses. Recs must be concrete and grounded in actual feedback.';
-    const resp=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+
+    const prompt='You are an event analyst for AI Collective (AISC), a university AI club. Analyze this post-event feedback and return ONLY valid JSON — no markdown, no preamble.\n\nQUANTITATIVE SUMMARY:\n'+statsLines.join('\n')+'\n\nOPEN-ENDED RESPONSES:\nWhat people enjoyed: '+st.enjoyMentions.join(' | ')+'\nWhat could be improved: '+st.improveMentions.join(' | ')+'\n\nReturn EXACTLY this JSON:\n{\n  "enjoyed_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"}\n  ],\n  "improve_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"}\n  ],\n  "recommendations": [\n    "Specific actionable rec 1",\n    "Specific actionable rec 2",\n    "Specific actionable rec 3",\n    "Specific actionable rec 4",\n    "Specific actionable rec 5"\n  ]\n}\nLabels max 4 words. Count = frequency in responses. Recs must be concrete and grounded in actual feedback.';
+
+    const resp=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||'API error: status '+resp.status);}
     const data=await resp.json();
     const raw=(data.content||[]).map(b=>b.text||'').join('');
     const clean=raw.replace(/```json\s*/g,'').replace(/```/g,'').trim();
     const parsed=JSON.parse(clean);
-    const qualEl=document.getElementById('qual-section');
-    const enjoyChips=(parsed.enjoyed_themes||[]).map(t=>'<span class="theme-chip">'+t.emoji+' '+t.label+' <span class="chip-count">'+t.count+'x</span></span>').join('');
-    const improveChips=(parsed.improve_themes||[]).map(t=>'<span class="theme-chip neg">'+t.emoji+' '+t.label+' <span class="chip-count">'+t.count+'x</span></span>').join('');
-    const recsHTML=(parsed.recommendations||[]).map((r,i)=>'<div class="rec"><div class="rec-n">'+(i+1)+'</div><div class="rec-t">'+r+'</div></div>').join('');
-    qualEl.innerHTML='<div class="chart-label" style="margin-bottom:.75rem">What went well</div><div class="themes-row">'+(enjoyChips||'<span style="color:var(--muted);font-size:.82rem">No enjoy responses found</span>')+'</div><div class="qual-divider"><span>Areas to improve</span></div><div class="themes-row">'+(improveChips||'<span style="color:var(--muted);font-size:.82rem">No improvement responses found</span>')+'</div><div class="qual-divider"><span>Recommendations</span></div><div class="recs-grid">'+recsHTML+'</div>';
+    renderQual(parsed);
     loadingEl.style.display='none';resultsEl.style.display='block';genBtn.disabled=false;
     resultsEl.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(err){loadingEl.style.display='none';genBtn.disabled=false;showError('Error: '+(err.message||'Something went wrong.'));}
 });
+
+function renderQual(parsed){
+  const qualEl=document.getElementById('qual-section');
+  const enjoyChips=(parsed.enjoyed_themes||[]).map(t=>'<span class="theme-chip">'+t.emoji+' '+t.label+' <span class="chip-count">'+t.count+'x</span></span>').join('');
+  const improveChips=(parsed.improve_themes||[]).map(t=>'<span class="theme-chip neg">'+t.emoji+' '+t.label+' <span class="chip-count">'+t.count+'x</span></span>').join('');
+  const recsHTML=(parsed.recommendations||[]).map((r,i)=>'<div class="rec"><div class="rec-n">'+(i+1)+'</div><div class="rec-t">'+r+'</div></div>').join('');
+  qualEl.innerHTML='<div class="chart-label" style="margin-bottom:.75rem">What went well</div><div class="themes-row">'+(enjoyChips||'<span style="color:var(--muted);font-size:.82rem">No responses found</span>')+'</div><div class="qual-divider"><span>Areas to improve</span></div><div class="themes-row">'+(improveChips||'<span style="color:var(--muted);font-size:.82rem">No responses found</span>')+'</div><div class="qual-divider"><span>Recommendations</span></div><div class="recs-grid">'+recsHTML+'</div>';
+}
+
 function showError(msg){errorBox.innerHTML=msg;errorBox.style.display='block';}
 function hideError(){errorBox.style.display='none';errorBox.innerHTML='';}
+
+// ── DEMO MODE ─────────────────────────────────────────────────────
+const DEMO_ROWS=(()=>{
+  const rows=[];
+  const years=['1st Year','2nd Year','3rd Year','4th Year','Grad Student'];
+  const inv=['First Event','Multiple Events','Current Associate','Current Board'];
+  const skills=['Beginner','Intermediate','Advanced','No Experience'];
+  const majors=['Computer Science','Data Science','Cognitive Science','Statistics','Other'];
+  const heard=['Instagram','Friend','Discord','Email'];
+  const enjoyed=['Great networking','Loved the workshops','Amazing speakers','The food','Met so many people','Really inclusive vibe','Hands-on projects'];
+  const improve=['More beginner content','Longer work sessions','Better food options','More mentorship','Clearer schedule','More workshops'];
+  const yd=[10,9,12,8,3],id=[14,18,7,3],sd=[15,19,6,2],md=[16,8,7,5,6],hd=[18,14,7,3];
+  function pick(arr,dist){let r=Math.random()*dist.reduce((a,b)=>a+b,0);for(let i=0;i<arr.length;i++){r-=dist[i];if(r<=0)return arr[i];}return arr[arr.length-1];}
+  for(let i=0;i<42;i++){
+    rows.push({
+      'Year':pick(years,yd),'Major(s)':pick(majors,md),
+      'What best describes your current involvement with AISC?':pick(inv,id),
+      'Which of these best describes your technical skill-level?':pick(skills,sd),
+      'How satisfied are you with the event?':String(Math.floor(Math.random()*3)+8),
+      'How did you hear about this event?':pick(heard,hd),
+      'What did you enjoy?':enjoyed[i%enjoyed.length],
+      'What do you think could be improved?':improve[i%improve.length],
+    });
+  }
+  return rows;
+})();
+
+const DEMO_AI={
+  enjoyed_themes:[{label:'Networking & Community',count:18,emoji:'🤝'},{label:'Workshop Quality',count:14,emoji:'🛠️'},{label:'Speaker Sessions',count:11,emoji:'🎤'},{label:'Event Atmosphere',count:9,emoji:'✨'},{label:'Food & Refreshments',count:7,emoji:'🍕'}],
+  improve_themes:[{label:'More Beginner Content',count:16,emoji:'📚'},{label:'Session Timing',count:12,emoji:'⏱'},{label:'Mentorship Access',count:9,emoji:'🧑‍🏫'},{label:'Food Options',count:6,emoji:'🥗'},{label:'Clearer Schedule',count:5,emoji:'📅'}],
+  recommendations:['Add a dedicated beginner track with intro workshops on AI tools, as 16 respondents cited lack of accessible content as the top improvement area.','Restructure the schedule to include at least two 45-minute open work/networking blocks — attendees want more unstructured time to connect.','Pair first-time attendees with a board or associate mentor for the event duration; 14 first-timers attended and mentorship was a top request.','Survey dietary preferences during RSVP and ensure at least 30% vegetarian/vegan options are available at future events.','Publish a detailed agenda 48 hours before each event — multiple respondents mentioned unclear expectations around timing and session structure.']
+};
+
+document.getElementById('demo-btn').addEventListener('click',()=>{
+  hideError();
+  parsedRows=DEMO_ROWS;
+  allRows=DEMO_ROWS;
+  activeFilters={};
+  const cols=detectCols(DEMO_ROWS);
+  detectedCols=cols;
+  const st=computeStats(DEMO_ROWS,cols);
+  renderStats(st);
+  renderQual(DEMO_AI);
+  resultsEl.style.display='block';
+  resultsEl.scrollIntoView({behavior:'smooth',block:'start'});
+});
 </script>
 </body>
 </html>

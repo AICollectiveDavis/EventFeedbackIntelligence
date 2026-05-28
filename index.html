@@ -143,6 +143,54 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
 .theme-chip .chip-count{background:rgba(79,127,255,0.25);border-radius:99px;padding:.1rem .4rem;font-size:.65rem;color:#a0baff}
 .theme-chip.neg{border-color:rgba(217,79,43,0.25);background:rgba(217,79,43,0.07);color:rgba(255,200,185,.8)}
 .theme-chip.neg .chip-count{background:rgba(217,79,43,0.2);color:#ffaa88}
+
+/* chip quote popover */
+.has-popover{position:relative}
+.chip-popover{
+  position:absolute;
+  bottom:calc(100% + 10px);
+  left:50%;transform:translateX(-50%) translateY(4px);
+  width:240px;
+  background:rgba(10,10,24,0.97);
+  border:1px solid rgba(79,127,255,0.2);
+  border-radius:12px;
+  padding:.85rem 1rem;
+  backdrop-filter:blur(20px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.6);
+  opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s;
+  z-index:200;
+  text-align:left;
+}
+.has-popover:hover .chip-popover{
+  opacity:1;pointer-events:auto;
+  transform:translateX(-50%) translateY(0);
+}
+.chip-popover::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:rgba(79,127,255,0.2);
+}
+.chip-popover::before{
+  content:'';position:absolute;top:calc(100% + 1px);left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(10,10,24,0.97);
+  z-index:1;
+}
+.chip-pop-title{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  text-transform:uppercase;letter-spacing:.14em;
+  color:rgba(79,127,255,0.7);margin-bottom:.6rem;
+}
+.chip-quote{
+  font-size:.78rem;color:rgba(210,215,255,0.8);
+  line-height:1.5;padding:.4rem .5rem;
+  border-left:2px solid rgba(79,127,255,0.3);
+  margin-bottom:.4rem;font-style:italic;
+}
+.chip-quote:last-child{margin-bottom:0}
+.theme-chip.neg .chip-popover{border-color:rgba(217,79,43,0.2)}
+.theme-chip.neg .chip-popover::after{border-top-color:rgba(217,79,43,0.2)}
+.theme-chip.neg .chip-pop-title{color:rgba(217,79,43,0.7)}
+.theme-chip.neg .chip-quote{border-left-color:rgba(217,79,43,0.3)}
 .qual-divider{display:flex;align-items:center;gap:.7rem;margin:1.25rem 0 1rem}
 .qual-divider span{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);white-space:nowrap}
 .qual-divider::before,.qual-divider::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -150,8 +198,47 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
 .rec{display:flex;gap:.9rem;padding:1rem 1.2rem;background:rgba(25,55,185,0.07);border:1px solid rgba(70,100,255,0.12);border-radius:12px;align-items:flex-start;transition:border-color .2s,background .2s}
 .rec:hover{border-color:rgba(70,100,255,0.25);background:rgba(25,55,185,0.12)}
 .rec-n{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#1e44cc,#991800);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;color:#fff;margin-top:1px}
-.rec-t{font-size:.87rem;color:rgba(205,205,235,.85);line-height:1.65}
+.rec-t{font-size:.87rem;color:rgba(205,205,235,.85);line-height:1.65;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.rec-body{flex:1;min-width:0}
+.rec-expandable{cursor:pointer}
+.rec-expandable:hover{border-color:rgba(70,100,255,0.35);background:rgba(25,55,185,0.15)}
+.rec-chevron{font-size:1.1rem;color:rgba(79,127,255,0.6);transition:transform .25s ease;flex-shrink:0;line-height:1}
+.rec-detail{
+  display:none;margin-top:.85rem;
+  padding-top:.85rem;border-top:1px solid rgba(255,255,255,0.06);
+}
+.rec-detail.open{display:block;animation:fadeUp .2s ease both}
+.rec-rationale{
+  font-size:.82rem;color:rgba(180,185,220,.75);
+  line-height:1.65;margin-bottom:.7rem;
+}
+.rec-evidence{display:flex;flex-direction:column;gap:.4rem}
+.rec-evidence-quote{
+  font-size:.78rem;font-style:italic;
+  color:rgba(160,170,210,.7);line-height:1.5;
+  padding:.35rem .6rem;
+  border-left:2px solid rgba(79,127,255,0.3);
+  background:rgba(79,127,255,0.04);
+  border-radius:0 6px 6px 0;
+}
 .metric-sub{font-family:'JetBrains Mono',monospace;font-size:.9rem;color:var(--muted)}
+.metrics-filtered-label{
+  font-family:'JetBrains Mono',monospace;font-size:.62rem;
+  text-transform:uppercase;letter-spacing:.12em;
+  color:rgba(79,127,255,0.6);margin:.6rem 0 .5rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.mf-arrow{font-size:.85rem;color:rgba(79,127,255,0.5)}
+.metrics-sub{margin-bottom:0}
+.metric-dim{
+  background:rgba(79,127,255,0.04);
+  border-color:rgba(79,127,255,0.12);
+}
+.metric-val-sm{
+  font-family:'Instrument Serif',serif;font-size:1.7rem;font-weight:400;line-height:1;
+  background:linear-gradient(110deg,rgba(160,186,255,0.7),rgba(255,184,122,0.7));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
 .chart-click-hint{font-size:.55rem;color:rgba(79,127,255,0.6);letter-spacing:.08em;margin-left:.4rem;text-transform:none;font-family:'JetBrains Mono',monospace}
 .filter-hint{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(200,210,255,0.45);letter-spacing:.1em;margin-top:-.7rem;margin-bottom:.9rem}
 #filter-bar{display:none;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:1rem;padding:.75rem 1rem;background:rgba(79,127,255,0.06);border:1px solid rgba(79,127,255,0.18);border-radius:12px}
@@ -179,7 +266,7 @@ header{text-align:center;padding:5rem 0 3.5rem;animation:fadeDown .8s ease both}
   <button class="gen-btn" id="gen-btn" disabled>Generate Analysis</button>
   <div style="display:flex;align-items:center;gap:.5rem">
   <button class="demo-btn" id="demo-btn">⚡ Preview with Demo Data</button>
-  <span class="info-wrap"><span class="info-icon">i</span><div class="info-tooltip"><div class="tt-title">Expected CSV columns</div><div class="tt-section">Required</div><div class="tt-row">Timestamp</div><div class="tt-row">Full Name</div><div class="tt-row">Email Address</div><div class="tt-row">Year</div><div class="tt-row">How satisfied are you with the event?</div><div class="tt-row">What did you enjoy?</div><div class="tt-row">What do you think could be improved?</div><div class="tt-section">Optional — enables more charts</div><div class="tt-row opt">Major(s)</div><div class="tt-row opt">What best describes your current involvement with AISC?</div><div class="tt-row opt">Which of these best describes your technical skill-level?</div><div class="tt-row opt">How did you hear about this event?</div></div></span>
+  <span class="info-wrap"><span class="info-icon">i</span><div class="info-tooltip"><div class="tt-title">Expected CSV columns</div><div class="tt-section">Required</div><div class="tt-row">Timestamp</div><div class="tt-row">Full Name</div><div class="tt-row">Email Address</div><div class="tt-row">Year</div><div class="tt-row">How satisfied are you with the event?</div><div class="tt-row">What did you enjoy?</div><div class="tt-row">What do you think could be improved?</div><div class="tt-section">Optional — enables more charts</div><div class="tt-row opt">Major(s)</div><div class="tt-row opt">What best describes your current involvement with AIC?</div><div class="tt-row opt">Which of these best describes your technical skill-level?</div><div class="tt-row opt">How did you hear about this event?</div></div></span>
   </div>
   <div id="loading"><div class="spinner"></div><p>Analyzing event data…</p></div>
   <div id="error-box"></div>
@@ -327,10 +414,15 @@ function applyFilters(){
   const filtered=getFilteredRows();
   const filteredSt=computeStats(filtered,detectedCols);
   const fullSt=computeStats(allRows,detectedCols);
+  const hasFilters=Object.keys(activeFilters).length>0;
   renderFilterBar();
-  renderMetrics(filteredSt);
+  renderMetrics(filteredSt,hasFilters);
   renderPies(fullSt,filteredSt,detectedCols);
   renderSatisfaction(filteredSt);
+  if(!hasFilters){
+    const fRow=document.getElementById('metrics-filtered');
+    if(fRow){fRow.style.display='none';fRow.innerHTML='';}
+  }
 }
 
 // ── FILTER BAR ────────────────────────────────────────────────────
@@ -413,7 +505,7 @@ function makePie(id,labels,data,filtData,colKey,activeVals,fullDist){
                 const displayCount=hasAnyFilter?filtData[fi]:fullDist?fullDist[label]||0:data[i];
                 const displayTotal=hasAnyFilter?(filtTotal||1):fullTotal;
                 return{
-                  text:(label.length>15?label.slice(0,14)+'…':label)+' ('+Math.round(displayCount/displayTotal*100)+'%)',
+                  text:(label.length>22?label.slice(0,21)+'…':label)+' ('+Math.round(displayCount/displayTotal*100)+'%)',
                   fillStyle:baseColor,strokeStyle:baseColor,
                   fontColor:isDimmed?'rgba(160,165,200,0.35)':'rgba(210,215,255,0.85)',
                   lineWidth:1,hidden:false,index:i
@@ -425,14 +517,14 @@ function makePie(id,labels,data,filtData,colKey,activeVals,fullDist){
         tooltip:{callbacks:{
           label:ctx=>{
             const fi=labels.indexOf(ctx.label);
-            const filtCount=filtData[fi]; // real count, not floored
+            const filtCount=filtData[fi];
             const fullCount=fullDist?fullDist[ctx.label]||0:filtCount;
             const filtTotal=filtData.reduce((a,b)=>a+b,0);
             if(hasAnyFilter&&filtCount!==fullCount)
-              return[' Filtered: '+filtCount+' of '+fullCount+' ('+Math.round(filtCount/(filtTotal||1)*100)+'% of filtered)'];
+              return[' '+ctx.label,'  Filtered: '+filtCount+' of '+fullCount+' ('+Math.round(filtCount/(filtTotal||1)*100)+'% of filtered)'];
             return ' '+ctx.label+': '+fullCount+' ('+Math.round(fullCount/fullTotal*100)+'%)';
           },
-          title:()=>['Click to filter']
+          title:()=>[]
         }}
       },
       animation:{duration:250}
@@ -441,16 +533,41 @@ function makePie(id,labels,data,filtData,colKey,activeVals,fullDist){
 }
 
 // ── RENDER PIECES ─────────────────────────────────────────────────
-function renderMetrics(st){
-  const isFiltered=Object.keys(activeFilters).length>0;
-  const totalLabel=isFiltered?st.total+' <span class="metric-sub">of '+allRows.length+'</span>':st.total;
-  const highPct=st.scores.length?pct(st.dist.high,st.scores.length)+'%':'—';
-  document.getElementById('metrics').innerHTML=[
-    {val:totalLabel,lbl:'Responses'},
-    {val:st.avgSat?st.avgSat.toFixed(1)+'/10':'—',lbl:'Avg Satisfaction'},
-    {val:st.medSat?st.medSat.toFixed(1)+'/10':'—',lbl:'Median Score'},
-    {val:highPct,lbl:'Rated 8–10'},
-  ].map(m=>'<div class="metric"><div class="metric-val">'+m.val+'</div><div class="metric-lbl">'+m.lbl+'</div></div>').join('');
+function renderMetrics(st,isFiltered){
+  if(!isFiltered){
+    // full dataset — render top row and clear any filtered row
+    const highPct=st.scores.length?pct(st.dist.high,st.scores.length)+'%':'—';
+    document.getElementById('metrics').innerHTML=[
+      {val:st.total,                                      lbl:'Total Responses'},
+      {val:st.avgSat?st.avgSat.toFixed(1)+'/10':'—',      lbl:'Avg Satisfaction'},
+      {val:st.medSat?st.medSat.toFixed(1)+'/10':'—',      lbl:'Median Score'},
+      {val:highPct,                                       lbl:'Rated 8–10'},
+    ].map(m=>'<div class="metric"><div class="metric-val">'+m.val+'</div><div class="metric-lbl">'+m.lbl+'</div></div>').join('');
+    const fRow=document.getElementById('metrics-filtered');
+    if(fRow){fRow.style.display='none';fRow.innerHTML='';}
+  } else {
+    // filtered — leave top row alone, show/update filtered row
+    const highPct=st.scores.length?pct(st.dist.high,st.scores.length)+'%':'—';
+    const activeLabels=Object.entries(activeFilters).flatMap(([,vals])=>[...vals]).join(', ');
+    let fRow=document.getElementById('metrics-filtered');
+    if(!fRow){
+      fRow=document.createElement('div');
+      fRow.id='metrics-filtered';
+      document.getElementById('who-charts').after(fRow);
+    }
+    fRow.style.display='block';
+    fRow.innerHTML=
+      '<div class="metrics-filtered-label">'+
+        '<span class="mf-arrow">↳</span> Filtered subset: '+activeLabels+
+      '</div>'+
+      '<div class="metrics metrics-sub">'+
+      [{val:st.total+' <span class="metric-sub">of '+allRows.length+'</span>', lbl:'Responses'},
+       {val:st.avgSat?st.avgSat.toFixed(1)+'/10':'—',                          lbl:'Avg Satisfaction'},
+       {val:st.medSat?st.medSat.toFixed(1)+'/10':'—',                          lbl:'Median Score'},
+       {val:highPct,                                                            lbl:'Rated 8–10'},
+      ].map(m=>'<div class="metric metric-dim"><div class="metric-val metric-val-sm">'+m.val+'</div><div class="metric-lbl">'+m.lbl+'</div></div>').join('')+
+      '</div>';
+  }
 }
 
 function renderPies(fullSt, filteredSt, cols){
@@ -458,7 +575,7 @@ function renderPies(fullSt, filteredSt, cols){
 
   const pieDefs=[
     {key:'year',   title:'Year of Study',     fullDist:fullSt.yearDist,    filtDist:filteredSt.yearDist,    id:'pie-year'},
-    {key:'involvement',title:'AISC Involvement',fullDist:fullSt.involveDist,filtDist:filteredSt.involveDist,id:'pie-involve'},
+    {key:'involvement',title:'AIC Involvement',fullDist:fullSt.involveDist,filtDist:filteredSt.involveDist,id:'pie-involve'},
     {key:'skill',  title:'Technical Skill',   fullDist:fullSt.skillDist,   filtDist:filteredSt.skillDist,   id:'pie-skill'},
     {key:'major',  title:'Major Distribution',fullDist:fullSt.majorDist,   filtDist:filteredSt.majorDist,   id:'pie-major'},
     {key:'heard',  title:'How They Heard',    fullDist:fullSt.heardDist,   filtDist:filteredSt.heardDist,   id:'pie-heard'},
@@ -510,11 +627,13 @@ function renderStats(st){
   activeFilters={};
   detectedCols=st.cols;
   allRows=parsedRows.length?parsedRows:allRows;
-  renderMetrics(st);
+  renderMetrics(st,false);
   renderPies(st,st,st.cols);
   renderSatisfaction(st);
   const bar=document.getElementById('filter-bar');
   if(bar){bar.innerHTML='';bar.style.display='none';}
+  const fRow=document.getElementById('metrics-filtered');
+  if(fRow){fRow.style.display='none';fRow.innerHTML='';}
 }
 
 // ── GENERATE ─────────────────────────────────────────────────────
@@ -536,10 +655,10 @@ genBtn.addEventListener('click',async()=>{
     if(Object.keys(st.skillDist).length)statsLines.push('Skill level: '+Object.entries(st.skillDist).map(([k,v])=>k+':'+v).join(', '));
     if(Object.keys(st.heardDist).length)statsLines.push('How heard: '+topN(st.heardDist,5).map(([k,v])=>k+':'+v).join(', '));
 
-    const prompt='You are an event analyst for AI Collective (AISC), a university AI club. Analyze this post-event feedback and return ONLY valid JSON — no markdown, no preamble.\n\nQUANTITATIVE SUMMARY:\n'+statsLines.join('\n')+'\n\nOPEN-ENDED RESPONSES:\nWhat people enjoyed: '+st.enjoyMentions.join(' | ')+'\nWhat could be improved: '+st.improveMentions.join(' | ')+'\n\nReturn EXACTLY this JSON:\n{\n  "enjoyed_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"}\n  ],\n  "improve_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"},\n    {"label":"max 4 words","count":number,"emoji":"emoji"}\n  ],\n  "recommendations": [\n    "Specific actionable rec 1",\n    "Specific actionable rec 2",\n    "Specific actionable rec 3",\n    "Specific actionable rec 4",\n    "Specific actionable rec 5"\n  ]\n}\nLabels max 4 words. Count = frequency in responses. Recs must be concrete and grounded in actual feedback.';
+    const prompt='You are an event analyst for AIC (AI Collective), a university AI club. Analyze this post-event feedback and return ONLY valid JSON — no markdown, no preamble.\n\nQUANTITATIVE SUMMARY:\n'+statsLines.join('\n')+'\n\nOPEN-ENDED RESPONSES:\nWhat people enjoyed: '+st.enjoyMentions.join(' | ')+'\nWhat could be improved: '+st.improveMentions.join(' | ')+'\n\nReturn EXACTLY this JSON:\n{\n  "enjoyed_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]}\n  ],\n  "improve_themes": [\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]},\n    {"label":"max 4 words","count":number,"emoji":"emoji","quotes":["exact quote 1","exact quote 2","exact quote 3"]}\n  ],\n  "recommendations": [\n    {"action":"specific actionable recommendation","rationale":"1-2 sentence explanation of why, referencing the data","evidence":["supporting quote or data point 1","supporting quote or data point 2"]},\n    {"action":"specific actionable recommendation","rationale":"1-2 sentence explanation of why, referencing the data","evidence":["supporting quote or data point 1","supporting quote or data point 2"]},\n    {"action":"specific actionable recommendation","rationale":"1-2 sentence explanation of why, referencing the data","evidence":["supporting quote or data point 1","supporting quote or data point 2"]},\n    {"action":"specific actionable recommendation","rationale":"1-2 sentence explanation of why, referencing the data","evidence":["supporting quote or data point 1","supporting quote or data point 2"]},\n    {"action":"specific actionable recommendation","rationale":"1-2 sentence explanation of why, referencing the data","evidence":["supporting quote or data point 1","supporting quote or data point 2"]}\n  ]\n}\nLabels max 4 words. Count = frequency. Quotes must be real verbatim excerpts. Rationale must reference actual data points or quote counts. Evidence = 2 real verbatim quotes supporting the rec.';
 
     const resp=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1800,messages:[{role:'user',content:prompt}]})});
     if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||'API error: status '+resp.status);}
     const data=await resp.json();
     const raw=(data.content||[]).map(b=>b.text||'').join('');
@@ -553,10 +672,55 @@ genBtn.addEventListener('click',async()=>{
 
 function renderQual(parsed){
   const qualEl=document.getElementById('qual-section');
-  const enjoyChips=(parsed.enjoyed_themes||[]).map(t=>'<span class="theme-chip">'+t.emoji+' '+t.label+' <span class="chip-count">'+t.count+'x</span></span>').join('');
-  const improveChips=(parsed.improve_themes||[]).map(t=>'<span class="theme-chip neg">'+t.emoji+' '+t.label+' <span class="chip-count">'+t.count+'x</span></span>').join('');
-  const recsHTML=(parsed.recommendations||[]).map((r,i)=>'<div class="rec"><div class="rec-n">'+(i+1)+'</div><div class="rec-t">'+r+'</div></div>').join('');
-  qualEl.innerHTML='<div class="chart-label" style="margin-bottom:.75rem">What went well</div><div class="themes-row">'+(enjoyChips||'<span style="color:var(--muted);font-size:.82rem">No responses found</span>')+'</div><div class="qual-divider"><span>Areas to improve</span></div><div class="themes-row">'+(improveChips||'<span style="color:var(--muted);font-size:.82rem">No responses found</span>')+'</div><div class="qual-divider"><span>Recommendations</span></div><div class="recs-grid">'+recsHTML+'</div>';
+
+  function buildChip(t,neg){
+    const cls='theme-chip'+(neg?' neg':'');
+    const quotes=(t.quotes||[]).map(q=>'<div class="chip-quote">"'+q+'"</div>').join('');
+    const popover=quotes?'<div class="chip-popover"><div class="chip-pop-title">What they said</div>'+quotes+'</div>':'';
+    return '<span class="'+cls+' has-popover">'+t.emoji+' '+t.label+' <span class="chip-count">'+t.count+'x</span>'+popover+'</span>';
+  }
+
+  function buildRec(r,i){
+    // support both old string format and new object format
+    const action=typeof r==='string'?r:r.action;
+    const rationale=typeof r==='object'?r.rationale:null;
+    const evidence=typeof r==='object'&&r.evidence?r.evidence:[];
+    const id='rec-expand-'+i;
+    const hasDetail=rationale||evidence.length;
+    const detail=hasDetail?
+      '<div class="rec-detail" id="'+id+'">'+
+        (rationale?'<div class="rec-rationale">'+rationale+'</div>':'')+
+        (evidence.length?'<div class="rec-evidence">'+evidence.map(e=>'<div class="rec-evidence-quote">"'+e+'"</div>').join('')+'</div>':'')+
+      '</div>':'';
+    const chevron=hasDetail?'<span class="rec-chevron" id="chev-'+i+'">›</span>':'';
+    return '<div class="rec'+(hasDetail?' rec-expandable':'')+'" '+(hasDetail?'onclick="toggleRec('+i+')"':'')+'>'+
+      '<div class="rec-n">'+(i+1)+'</div>'+
+      '<div class="rec-body">'+
+        '<div class="rec-t">'+action+chevron+'</div>'+
+        detail+
+      '</div>'+
+    '</div>';
+  }
+
+  const enjoyChips=(parsed.enjoyed_themes||[]).map(t=>buildChip(t,false)).join('');
+  const improveChips=(parsed.improve_themes||[]).map(t=>buildChip(t,true)).join('');
+  const recsHTML=(parsed.recommendations||[]).map((r,i)=>buildRec(r,i)).join('');
+
+  qualEl.innerHTML=
+    '<div class="chart-label" style="margin-bottom:.75rem">What went well</div>'+
+    '<div class="themes-row">'+(enjoyChips||'<span style="color:var(--muted);font-size:.82rem">No responses found</span>')+'</div>'+
+    '<div class="qual-divider"><span>Areas to improve</span></div>'+
+    '<div class="themes-row">'+(improveChips||'<span style="color:var(--muted);font-size:.82rem">No responses found</span>')+'</div>'+
+    '<div class="qual-divider"><span>Recommendations</span></div>'+
+    '<div class="recs-grid">'+recsHTML+'</div>';
+}
+
+function toggleRec(i){
+  const detail=document.getElementById('rec-expand-'+i);
+  const chev=document.getElementById('chev-'+i);
+  if(!detail)return;
+  const open=detail.classList.toggle('open');
+  if(chev)chev.style.transform=open?'rotate(90deg)':'rotate(0deg)';
 }
 
 function showError(msg){errorBox.innerHTML=msg;errorBox.style.display='block';}
@@ -577,7 +741,7 @@ const DEMO_ROWS=(()=>{
   for(let i=0;i<42;i++){
     rows.push({
       'Year':pick(years,yd),'Major(s)':pick(majors,md),
-      'What best describes your current involvement with AISC?':pick(inv,id),
+      'What best describes your current involvement with AIC?':pick(inv,id),
       'Which of these best describes your technical skill-level?':pick(skills,sd),
       'How satisfied are you with the event?':String(Math.floor(Math.random()*3)+8),
       'How did you hear about this event?':pick(heard,hd),
@@ -589,9 +753,27 @@ const DEMO_ROWS=(()=>{
 })();
 
 const DEMO_AI={
-  enjoyed_themes:[{label:'Networking & Community',count:18,emoji:'🤝'},{label:'Workshop Quality',count:14,emoji:'🛠️'},{label:'Speaker Sessions',count:11,emoji:'🎤'},{label:'Event Atmosphere',count:9,emoji:'✨'},{label:'Food & Refreshments',count:7,emoji:'🍕'}],
-  improve_themes:[{label:'More Beginner Content',count:16,emoji:'📚'},{label:'Session Timing',count:12,emoji:'⏱'},{label:'Mentorship Access',count:9,emoji:'🧑‍🏫'},{label:'Food Options',count:6,emoji:'🥗'},{label:'Clearer Schedule',count:5,emoji:'📅'}],
-  recommendations:['Add a dedicated beginner track with intro workshops on AI tools, as 16 respondents cited lack of accessible content as the top improvement area.','Restructure the schedule to include at least two 45-minute open work/networking blocks — attendees want more unstructured time to connect.','Pair first-time attendees with a board or associate mentor for the event duration; 14 first-timers attended and mentorship was a top request.','Survey dietary preferences during RSVP and ensure at least 30% vegetarian/vegan options are available at future events.','Publish a detailed agenda 48 hours before each event — multiple respondents mentioned unclear expectations around timing and session structure.']
+  enjoyed_themes:[
+    {label:'Networking & Community',count:18,emoji:'🤝',quotes:['Met so many people in AI','Best networking event I\'ve been to','Connected with people across majors']},
+    {label:'Workshop Quality',count:14,emoji:'🛠️',quotes:['Workshops were super hands-on','Loved the practical format','Actually got to build something']},
+    {label:'Speaker Sessions',count:11,emoji:'🎤',quotes:['Speakers were incredibly insightful','Real industry perspective was refreshing','Q&A was the best part']},
+    {label:'Event Atmosphere',count:9,emoji:'✨',quotes:['Felt so welcoming as a first-timer','Great energy throughout the whole day','Everyone was super collaborative']},
+    {label:'Food & Refreshments',count:7,emoji:'🍕',quotes:['Food was great','Really appreciated the snacks','Kept me going through the afternoon']},
+  ],
+  improve_themes:[
+    {label:'More Beginner Content',count:16,emoji:'📚',quotes:['Would love a beginner-friendly intro track','Some sessions felt too advanced','More foundational AI content please']},
+    {label:'Session Timing',count:12,emoji:'⏱',quotes:['Pitches ran way too long','Need stricter time limits','Schedule felt rushed at the end']},
+    {label:'Mentorship Access',count:9,emoji:'🧑‍🏫',quotes:['Wish there was more 1-on-1 mentor time','Hard to find someone to ask questions','More office hours style sessions']},
+    {label:'Food Options',count:6,emoji:'🥗',quotes:['Need more vegetarian options','Not enough food for the number of people','Would appreciate dietary labels']},
+    {label:'Clearer Schedule',count:5,emoji:'📅',quotes:['Didn\'t know what was happening when','Agenda wasn\'t clear until day-of','Send schedule in advance next time']},
+  ],
+  recommendations:[
+    {action:'Add a dedicated beginner track with intro workshops on AI tools.',rationale:'16 respondents cited lack of accessible content as the top improvement area, and skill data shows 36% of attendees are beginners.',evidence:['Some sessions felt too advanced for where I\'m at','Would love a beginner-friendly intro track']},
+    {action:'Restructure the schedule to include two 45-minute open networking blocks.',rationale:'Attendees simultaneously requested more working time and more networking — suggesting the current schedule lacks intentional breathing room.',evidence:['Need more unstructured time to just talk to people','Felt rushed between every session']},
+    {action:'Pair first-time attendees with an AIC mentor for the event duration.',rationale:'14 of 42 attendees were attending their first event, and mentorship access was the third most cited improvement.',evidence:['Hard to find someone to ask questions','Wish there was more 1-on-1 mentor time']},
+    {action:'Survey dietary preferences during RSVP and ensure 30%+ vegetarian options.',rationale:'6 respondents flagged food options despite it being a secondary concern — easy win for inclusivity.',evidence:['Need more vegetarian options','Not enough food for the number of people']},
+    {action:'Publish a detailed agenda 48 hours before each event.',rationale:'5 respondents independently mentioned unclear timing expectations, suggesting a communication gap rather than a logistics one.',evidence:['Didn\'t know what was happening when','Send schedule in advance next time']},
+  ]
 };
 
 document.getElementById('demo-btn').addEventListener('click',()=>{
